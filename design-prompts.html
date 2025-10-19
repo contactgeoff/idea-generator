@@ -87,6 +87,21 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .card-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .card {
+                min-height: auto;
+                padding: 1.5rem;
+            }
+             #history-container {
+                height: 70vh;
+            }
+        }
         
         /* Print-specific styles */
         @media print {
@@ -196,7 +211,7 @@
         }
 
         function generatePrompt() {
-            currentHue = (currentHue + 20) % 360;
+            currentHue = (currentHue + 188) % 360;
 
             const selectedWords = {
                 user: getNextWord('user'),
