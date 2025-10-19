@@ -398,7 +398,7 @@
             user: ['Friend', 'Family', 'Helper', 'Explorer', 'Learner', 'Performer', 'Protector', 'Player', 'Collector', 'Beginner', 'Artist', 'Builder', 'Teacher', 'Leader', 'Storyteller', 'Nurturer', 'Musician', 'Athlete', 'Inventor', 'Detective', 'Dreamer', 'Guardian', 'Wanderer', 'Healer', 'Innovator'],
             emotion: ['Happiness', 'Excitement', 'Calmness', 'Surprise', 'Friendship', 'Safety', 'Laughter', 'Comfort', 'Joy', 'Hope', 'Wonder', 'Curiosity', 'Trust', 'Courage', 'Peace', 'Pride', 'Relief', 'Awe', 'Belonging', 'Connection', 'Focus', 'Energy', 'Growth', 'Freedom', 'Empathy', 'Kindness', 'Confidence', 'Success', 'Understanding', 'Inspiration'],
             adjective: ['Bright', 'Peaceful', 'Robust', 'Responsive', 'Supportive', 'Smooth', 'Intuitive', 'Vivid', 'Playful', 'Magical', 'Reflective', 'Expressive', 'Expansive', 'Compact', 'Bouncy', 'Tactile', 'Creative', 'Solid', 'Shiny', 'Subtle', 'Clear', 'Textured', 'Novel', 'Retro', 'Secret', 'Clever', 'Funny', 'Gentle', 'Flowing', 'Structured'],
-            verb: ['Help', 'Create', 'Play', 'Share', 'Grow', 'Find', 'Listen', 'Comfort', 'Build', 'Show', 'Design', 'Make', 'Connect', 'Discover', 'Explore', 'Inspire', 'Teach', 'Learn', 'Guide', 'Protect', 'Heal', 'Nurture', 'Imagine', 'Invent', 'Organize', 'Simplify', 'Animate', 'Express', 'Communicate', 'Transform']
+            verb: ['Help', 'Create', 'Play', 'Share', 'Grow', 'Find', 'Listen', 'Comfort', 'Build', 'Show', 'Design', 'Make', 'Connect', 'Discover', 'Explore', 'Inspire', 'Teach', 'Learn', 'Guide', 'Protect', 'Heal', 'Nurture', 'Imagine', 'Invent', 'Organise', 'Simplify', 'Animate', 'Express', 'Communicate', 'Transform']
         };
         
         // This is the new data structure for words
@@ -485,7 +485,7 @@
             return word;
         }
         
-        function reinitializeGenerator() {
+        function reinitialiseGenerator() {
             for (const category in words) {
                 const activeWords = words[category]
                     .map(wordObj => wordObj.custom.trim() || (wordObj.deleted ? null : wordObj.default))
@@ -649,7 +649,7 @@
         saveBtn.addEventListener('click', () => {
             localStorage.setItem('designPromptWords', JSON.stringify(words));
             localStorage.setItem('designPromptHasChanges', 'true');
-            reinitializeGenerator();
+            reinitialiseGenerator();
             updateSaveButtonVisibility();
             adminPanelContainer.classList.add('hidden');
         });
@@ -708,7 +708,7 @@
                         words = loadedWords;
                         localStorage.setItem('designPromptWords', JSON.stringify(words));
                         localStorage.setItem('designPromptHasChanges', 'true');
-                        reinitializeGenerator();
+                        reinitialiseGenerator();
                         updateSaveButtonVisibility();
                         showAlert('Success', 'Word lists have been loaded successfully.');
                         if (!adminPanelContainer.classList.contains('hidden')) {
@@ -750,7 +750,7 @@
             }
             
             currentHue = Math.floor(Math.random() * 360);
-            reinitializeGenerator();
+            reinitialiseGenerator();
             updateSaveButtonVisibility();
         };
     </script>
