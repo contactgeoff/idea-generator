@@ -59,6 +59,7 @@
             font-weight: 700;
             color: #111827;
             line-height: 1.3;
+            min-height: 2.6em; /* Ensure space for words */
         }
         .btn {
             background-color: #4f46e5;
@@ -100,6 +101,9 @@
             }
              #history-container {
                 height: 70vh;
+            }
+            .card-word {
+                min-height: 0;
             }
         }
         
@@ -152,6 +156,7 @@
             }
             .card-word {
                 font-size: 1.1rem;
+                min-height: 0;
             }
         }
     </style>
@@ -159,28 +164,46 @@
 <body class="bg-gray-50 text-gray-800 flex flex-col items-center justify-center min-h-screen p-6">
 
     <div class="text-center mb-8 no-print">
-        <h1 class="text-4xl font-bold text-gray-900">Design Prompt Generator</h1>
-        <p class="mt-2 text-lg text-gray-600">Generate random prompts to inspire future design possibilities.</p>
-        <div class="mt-6">
-            <button id="generate-btn" class="btn">Generate New Prompt</button>
-            <button id="print-btn" class="btn ml-4">Print to PDF</button>
+        <h1 class="text-2xl md:text-4xl font-bold text-gray-900">Design Prompt Generator</h1>
+        <p class="mt-2 text-md md:text-lg text-gray-600">Generate random prompts to inspire</p>
+        <div class="mt-6 flex flex-col md:flex-row justify-center items-center gap-4">
+            <div class="flex justify-center items-stretch w-full px-4 md:w-auto md:px-0 gap-2">
+                <input type="number" id="generate-count" value="1" min="1" class="border border-gray-300 rounded-lg text-center w-[40%] md:w-24 text-lg">
+                <button id="generate-btn" class="btn w-[40%] md:w-auto">Generate</button>
+            </div>
+            <button id="print-btn" class="btn hidden md:inline-block">Print to PDF</button>
         </div>
     </div>
 
     <div id="history-container">
-        <!-- Rows of cards will be prepended here by JavaScript -->
+        <!-- Placeholder row shown on initial load -->
+        <div id="placeholder-row" class="card-container">
+            <div class="card" style="background-color: hsl(0, 0%, 90%);">
+                <div class="card-category">User</div>
+                <div class="card-word">Who?</div>
+            </div>
+            <div class="card" style="background-color: hsl(0, 0%, 85%);">
+                <div class="card-category">Adjective</div>
+                <div class="card-word">How?</div>
+            </div>
+            <div class="card" style="background-color: hsl(0, 0%, 80%);">
+                <div class="card-category">Action</div>
+                <div class="card-word">What?</div>
+            </div>
+        </div>
     </div>
 
     <script>
         const words = {
-            user: ['Friend', 'Family', 'Helper', 'Explorer', 'Learner', 'Performer', 'Protector', 'Player', 'Collector', 'Beginner', 'Artist', 'Builder', 'Teacher', 'Leader', 'Storyteller', 'Nurturer', 'Musician', 'Dancer', 'Inventor', 'Detective', 'Dreamer', 'Guardian', 'Wanderer', 'Healer', 'Innovator'],
+            user: ['Friend', 'Family', 'Helper', 'Explorer', 'Learner', 'Performer', 'Protector', 'Player', 'Collector', 'Beginner', 'Artist', 'Builder', 'Teacher', 'Leader', 'Storyteller', 'Nurturer', 'Musician', 'Athlete', 'Inventor', 'Detective', 'Dreamer', 'Guardian', 'Wanderer', 'Healer', 'Innovator'],
             emotion: ['Happiness', 'Excitement', 'Calmness', 'Surprise', 'Friendship', 'Safety', 'Laughter', 'Comfort', 'Joy', 'Hope', 'Wonder', 'Curiosity', 'Trust', 'Courage', 'Peace', 'Pride', 'Relief', 'Awe', 'Belonging', 'Connection', 'Focus', 'Energy', 'Growth', 'Freedom', 'Empathy', 'Kindness', 'Confidence', 'Success', 'Understanding', 'Inspiration'],
-            adjective: ['Bright', 'Soft', 'Robust', 'Responsive', 'Warm', 'Smooth', 'Intuitive', 'Vivid', 'Playful', 'Magical', 'Quiet', 'Loud', 'Expansive', 'Compact', 'Bouncy', 'Tactile', 'Light', 'Solid', 'Shiny', 'Subtle', 'Clear', 'Textured', 'Novel', 'Retro', 'Secret', 'Clever', 'Funny', 'Gentle', 'Flowing', 'Structured'],
+            adjective: ['Bright', 'Peaceful', 'Robust', 'Responsive', 'Supportive', 'Smooth', 'Intuitive', 'Vivid', 'Playful', 'Magical', 'Reflective', 'Expressive', 'Expansive', 'Compact', 'Bouncy', 'Tactile', 'Creative', 'Solid', 'Shiny', 'Subtle', 'Clear', 'Textured', 'Novel', 'Retro', 'Secret', 'Clever', 'Funny', 'Gentle', 'Flowing', 'Structured'],
             verb: ['Help', 'Create', 'Play', 'Share', 'Grow', 'Find', 'Listen', 'Comfort', 'Build', 'Show', 'Design', 'Make', 'Connect', 'Discover', 'Explore', 'Inspire', 'Teach', 'Learn', 'Guide', 'Protect', 'Heal', 'Nurture', 'Imagine', 'Invent', 'Organize', 'Simplify', 'Animate', 'Express', 'Communicate', 'Transform']
         };
 
         const historyContainer = document.getElementById('history-container');
         const generateBtn = document.getElementById('generate-btn');
+        const generateCountInput = document.getElementById('generate-count');
         const printBtn = document.getElementById('print-btn');
 
         let shuffledWords = {};
@@ -252,7 +275,21 @@
             historyContainer.prepend(newRow);
         }
         
-        generateBtn.addEventListener('click', generatePrompt);
+        generateBtn.addEventListener('click', () => {
+            const placeholder = document.getElementById('placeholder-row');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            
+            const count = parseInt(generateCountInput.value, 10);
+            if (isNaN(count) || count < 1) {
+                return;
+            }
+            for (let i = 0; i < count; i++) {
+                generatePrompt();
+            }
+        });
+
         printBtn.addEventListener('click', () => {
             window.print();
         });
@@ -263,10 +300,10 @@
             for (const category in words) {
                 shuffledWords[category] = shuffle([...words[category]]);
             }
-            generatePrompt(); // Generate one row on load
         };
     </script>
 
 </body>
 </html>
+
 
