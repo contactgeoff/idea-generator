@@ -215,6 +215,37 @@
             }
         }
         
+        @media (max-height: 500px) and (orientation: landscape) {
+            #history-container {
+                height: 75vh;
+            }
+            .card {
+                padding: 1rem 0.75rem;
+                min-height: 100px;
+            }
+            .card-category {
+                font-size: 0.75rem;
+                margin-bottom: 0.25rem;
+            }
+            .card-word {
+                font-size: 1.25rem;
+                min-height: 0;
+                line-height: 1.2;
+            }
+            .card-container {
+                gap: 1rem;
+            }
+            #main-title-container {
+                margin-bottom: 1rem;
+            }
+            #main-title-container h1 {
+                font-size: 1.5rem;
+            }
+            #main-title-container p {
+                font-size: 0.9rem;
+            }
+        }
+        
         /* Print-specific styles */
         @media print {
             @page {
