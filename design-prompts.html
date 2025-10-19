@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Design Prompt Card Generator</title>
+    <title>Ideation Prompt Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,6 +89,99 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Modal & Admin Panel Styles */
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #word-editor {
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            flex-grow: 1;
+        }
+        .editor-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            font-weight: bold;
+            padding: 0 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .word-entry { 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            align-items: center; 
+            margin-bottom: 0.5rem;
+            padding: 0.25rem;
+        }
+        .word-entry > div {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .word-entry input { border: 1px solid #ddd; padding: 0.5rem; border-radius: 4px; width: 100%;}
+        .default-word { flex-grow: 1; padding: 0.5rem; }
+        .default-word.deleted { text-decoration: line-through; color: #999; }
+        .delete-btn {
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .delete-default-btn { background: #ef4444; color: white; }
+        .delete-default-btn.disabled { background: #a0aec0; } /* Grey background for disabled button */
+        .clear-custom-btn { background: white; color: #ef4444; border: 1px solid #ef4444; }
+
+        /* Radio button styling */
+        .radio-btn-label input:checked + .radio-btn-span {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        .radio-btn-span {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .radio-btn-span:hover {
+            background-color: #eef2ff;
+        }
+
+        /* Splash & Load Modal Styles */
+        #splash-screen-container ul { list-style-position: inside; }
+        #splash-screen-container li { margin-bottom: 0.5rem; }
+
         /* Mobile Responsive Styles */
         @media (max-width: 768px) {
             .card-container {
@@ -162,10 +255,20 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col items-center justify-center min-h-screen p-6">
+    
+    <div class="absolute top-4 right-4 flex gap-2 no-print">
+        <button id="admin-btn" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300">Admin</button>
+    </div>
+    <div class="absolute top-4 left-4 flex gap-2 no-print">
+        <button id="load-lists-btn" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300">Load Lists</button>
+        <button id="save-lists-btn" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300 hidden">Save Lists</button>
+    </div>
+
+    <input type="file" id="json-file-input" class="hidden" accept=".json">
 
     <div class="text-center mb-8 no-print">
-        <h1 class="text-2xl md:text-4xl font-bold text-gray-900">Design Prompt Generator</h1>
-        <p class="mt-2 text-md md:text-lg text-gray-600">Generate random prompts to inspire</p>
+        <h1 class="text-2xl md:text-4xl font-bold text-gray-900">Ideation Prompt Generator</h1>
+        <p class="mt-2 text-md md:text-lg text-gray-600">Random prompts to spark and inspire</p>
         <div class="mt-6 flex flex-col md:flex-row justify-center items-center gap-4">
             <div class="flex justify-center items-stretch w-full px-4 md:w-auto md:px-0 gap-2">
                 <input type="number" id="generate-count" value="1" min="1" class="border border-gray-300 rounded-lg text-center w-[40%] md:w-24 text-lg">
@@ -192,29 +295,177 @@
             </div>
         </div>
     </div>
+    
+    <!-- Admin Panel HTML (hidden by default) -->
+    <div id="admin-panel-container" class="hidden no-print modal-container">
+        <div id="admin-panel" class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Edit Word Lists</h2>
+                <button id="close-admin-btn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div id="category-selector" class="flex flex-wrap gap-2 mb-4">
+                <label class="radio-btn-label">
+                    <input type="radio" name="category" value="user" class="hidden" checked>
+                    <span class="radio-btn-span">User</span>
+                </label>
+                <label class="radio-btn-label">
+                    <input type="radio" name="category" value="adjective" class="hidden">
+                    <span class="radio-btn-span">Adjective</span>
+                </label>
+                <label class="radio-btn-label">
+                    <input type="radio" name="category" value="emotion" class="hidden">
+                    <span class="radio-btn-span">Emotion</span>
+                </label>
+                <label class="radio-btn-label">
+                    <input type="radio" name="category" value="verb" class="hidden">
+                    <span class="radio-btn-span">Verb</span>
+                </label>
+            </div>
+            <div class="editor-header">
+                <div>Default</div>
+                <div>Teacher Defined</div>
+            </div>
+            <div id="word-editor"></div>
+            <div class="flex flex-wrap gap-2 mt-4">
+                 <button id="add-word-btn" class="btn text-sm p-2 bg-blue-500 hover:bg-blue-600">Add New Word</button>
+                 <button id="reset-list-btn" class="btn text-sm p-2 bg-yellow-500 hover:bg-yellow-600">Reset Current List</button>
+                 <button id="reset-all-btn" class="btn text-sm p-2 bg-red-500 hover:bg-red-600">Reset ALL to Default</button>
+                 <button id="save-btn" class="btn text-sm p-2 flex-grow bg-green-500 hover:bg-green-600">Save & Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Password Modal -->
+    <div id="password-modal-container" class="hidden no-print modal-container">
+        <div class="modal-content max-w-sm">
+            <h2 class="text-xl font-bold mb-4">Admin Access</h2>
+            <p class="text-sm text-gray-600 mb-2">Please enter the password to continue.</p>
+            <input type="password" id="password-input" class="w-full p-2 border border-gray-300 rounded">
+            <p id="password-error" class="text-red-500 text-sm mt-2 hidden">Incorrect password.</p>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="password-cancel-btn" class="btn bg-gray-300 hover:bg-gray-400 text-gray-800">Cancel</button>
+                <button id="password-submit-btn" class="btn">Submit</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Generic Alert Modal -->
+    <div id="alert-modal-container" class="hidden no-print modal-container">
+        <div class="modal-content max-w-sm">
+            <h2 id="alert-title" class="text-xl font-bold mb-4">Notice</h2>
+            <p id="alert-message" class="text-gray-700 mb-6"></p>
+            <div class="flex justify-end gap-4">
+                <button id="alert-ok-btn" class="btn">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Save Modal -->
+    <div id="save-modal-container" class="hidden no-print modal-container">
+        <div class="modal-content max-w-sm">
+            <h2 class="text-xl font-bold mb-4">Save Word Lists</h2>
+            <p class="text-sm text-gray-600 mb-2">Enter a class code or project name for your file.</p>
+            <input type="text" id="class-code-input" class="w-full p-2 border border-gray-300 rounded" placeholder="e.g., 9Y-DT1 or Project-X">
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="save-cancel-btn" class="btn bg-gray-300 hover:bg-gray-400 text-gray-800">Cancel</button>
+                <button id="save-confirm-btn" class="btn">Save File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Splash Screen Intro Modal -->
+    <div id="splash-screen-container" class="hidden no-print modal-container">
+        <div class="modal-content max-w-lg">
+            <h2 class="text-2xl font-bold mb-4">Welcome to the Ideation Generator!</h2>
+            <div class="text-left text-gray-700 space-y-4">
+                <p>This tool helps you create random combinations of words to spark new design ideas.</p>
+                <ul class="list-disc">
+                    <li>Enter a number to say how many prompt cards to create, then click <strong>Generate</strong>.</li>
+                    <li>Use the <strong>Admin</strong> button (top right, password hint: New Cross PGCE University) to customise the word lists for your own projects.</li>
+                    <li>To revert all lists to their original defaults, open the <strong>Admin</strong> panel and use the 'Reset ALL to Default' button.</li>
+                    <li>Your custom word lists are saved automatically in your browser. Use the <strong>Save/Load Lists</strong> buttons to keep different versions for classes or projects.</li>
+                    <li>Click <strong>Print to PDF</strong> to create a shareable copy of your generated prompts.</li>
+                </ul>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button id="splash-close-btn" class="btn">Got it!</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const words = {
+        const defaultWords = {
             user: ['Friend', 'Family', 'Helper', 'Explorer', 'Learner', 'Performer', 'Protector', 'Player', 'Collector', 'Beginner', 'Artist', 'Builder', 'Teacher', 'Leader', 'Storyteller', 'Nurturer', 'Musician', 'Athlete', 'Inventor', 'Detective', 'Dreamer', 'Guardian', 'Wanderer', 'Healer', 'Innovator'],
             emotion: ['Happiness', 'Excitement', 'Calmness', 'Surprise', 'Friendship', 'Safety', 'Laughter', 'Comfort', 'Joy', 'Hope', 'Wonder', 'Curiosity', 'Trust', 'Courage', 'Peace', 'Pride', 'Relief', 'Awe', 'Belonging', 'Connection', 'Focus', 'Energy', 'Growth', 'Freedom', 'Empathy', 'Kindness', 'Confidence', 'Success', 'Understanding', 'Inspiration'],
             adjective: ['Bright', 'Peaceful', 'Robust', 'Responsive', 'Supportive', 'Smooth', 'Intuitive', 'Vivid', 'Playful', 'Magical', 'Reflective', 'Expressive', 'Expansive', 'Compact', 'Bouncy', 'Tactile', 'Creative', 'Solid', 'Shiny', 'Subtle', 'Clear', 'Textured', 'Novel', 'Retro', 'Secret', 'Clever', 'Funny', 'Gentle', 'Flowing', 'Structured'],
             verb: ['Help', 'Create', 'Play', 'Share', 'Grow', 'Find', 'Listen', 'Comfort', 'Build', 'Show', 'Design', 'Make', 'Connect', 'Discover', 'Explore', 'Inspire', 'Teach', 'Learn', 'Guide', 'Protect', 'Heal', 'Nurture', 'Imagine', 'Invent', 'Organize', 'Simplify', 'Animate', 'Express', 'Communicate', 'Transform']
         };
-
+        
+        // This is the new data structure for words
+        let words = {}; 
+        
+        // Main UI elements
         const historyContainer = document.getElementById('history-container');
         const generateBtn = document.getElementById('generate-btn');
         const generateCountInput = document.getElementById('generate-count');
         const printBtn = document.getElementById('print-btn');
+        const saveListsBtn = document.getElementById('save-lists-btn');
+        const loadListsBtn = document.getElementById('load-lists-btn');
+        const jsonFileInput = document.getElementById('json-file-input');
+        
+        // Admin Panel Elements
+        const adminBtn = document.getElementById('admin-btn');
+        const adminPanelContainer = document.getElementById('admin-panel-container');
+        const closeAdminBtn = document.getElementById('close-admin-btn');
+        const categorySelector = document.getElementById('category-selector');
+        const wordEditor = document.getElementById('word-editor');
+        const addWordBtn = document.getElementById('add-word-btn');
+        const resetListBtn = document.getElementById('reset-list-btn');
+        const resetAllBtn = document.getElementById('reset-all-btn');
+        const saveBtn = document.getElementById('save-btn');
+        
+        // Password Modal Elements
+        const passwordModalContainer = document.getElementById('password-modal-container');
+        const passwordInput = document.getElementById('password-input');
+        const passwordError = document.getElementById('password-error');
+        const passwordSubmitBtn = document.getElementById('password-submit-btn');
+        const passwordCancelBtn = document.getElementById('password-cancel-btn');
+
+        // Save Modal Elements
+        const saveModalContainer = document.getElementById('save-modal-container');
+        const classCodeInput = document.getElementById('class-code-input');
+        const saveConfirmBtn = document.getElementById('save-confirm-btn');
+        const saveCancelBtn = document.getElementById('save-cancel-btn');
+
+        // Alert Modal Elements
+        const alertModalContainer = document.getElementById('alert-modal-container');
+        const alertTitle = document.getElementById('alert-title');
+        const alertMessage = document.getElementById('alert-message');
+        const alertOkBtn = document.getElementById('alert-ok-btn');
+        
+        // Splash and Load Modal Elements
+        const splashScreenContainer = document.getElementById('splash-screen-container');
+        const splashCloseBtn = document.getElementById('splash-close-btn');
 
         let shuffledWords = {};
-        const currentIndices = {
-            user: 0,
-            emotion: 0,
-            adjective: 0,
-            verb: 0
-        };
-        
+        const currentIndices = { user: 0, emotion: 0, adjective: 0, verb: 0 };
         let currentHue = 0;
+        
+        function showAlert(title, message) {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertModalContainer.classList.remove('hidden');
+        }
+        alertOkBtn.addEventListener('click', () => alertModalContainer.classList.add('hidden'));
+
+        function updateSaveButtonVisibility() {
+            const hasChanges = localStorage.getItem('designPromptHasChanges') === 'true';
+            if (hasChanges) {
+                saveListsBtn.classList.remove('hidden');
+            } else {
+                saveListsBtn.classList.add('hidden');
+            }
+        }
 
         function shuffle(array) {
             let currentIndex = array.length, randomIndex;
@@ -227,83 +478,283 @@
         }
 
         function getNextWord(category) {
+            if (!shuffledWords[category] || shuffledWords[category].length === 0) return "---";
             const index = currentIndices[category];
             const word = shuffledWords[category][index];
             currentIndices[category] = (index + 1) % shuffledWords[category].length;
             return word;
         }
+        
+        function reinitializeGenerator() {
+            for (const category in words) {
+                const activeWords = words[category]
+                    .map(wordObj => wordObj.custom.trim() || (wordObj.deleted ? null : wordObj.default))
+                    .filter(Boolean); // Filter out null/empty strings
+                shuffledWords[category] = shuffle(activeWords);
+                currentIndices[category] = 0;
+            }
+        }
 
         function generatePrompt() {
             currentHue = (currentHue + 188) % 360;
-
             const selectedWords = {
                 user: getNextWord('user'),
                 emotion: getNextWord('emotion'),
                 adjective: getNextWord('adjective'),
                 verb: getNextWord('verb')
             };
-
             if (selectedWords.verb === selectedWords.emotion) {
                 selectedWords.emotion = getNextWord('emotion');
             }
-
             const actionPhrase = `${selectedWords.verb} with ${selectedWords.emotion}`;
-            
             const newRow = document.createElement('div');
             newRow.className = 'card-container fade-in';
-            
             const cardsData = [
                 { category: 'User', word: selectedWords.user },
                 { category: 'Adjective', word: selectedWords.adjective },
                 { category: 'Action', word: actionPhrase }
             ];
-
             cardsData.forEach((data, index) => {
                 const card = document.createElement('div');
                 card.className = 'card';
-                
                 const lightness = 90 - (index * 5);
                 card.style.backgroundColor = `hsl(${currentHue}, 70%, ${lightness}%)`;
-                
-                card.innerHTML = `
-                    <div class="card-category">${data.category}</div>
-                    <div class="card-word">${data.word}</div>
-                `;
+                card.innerHTML = `<div class="card-category">${data.category}</div><div class="card-word">${data.word}</div>`;
                 newRow.appendChild(card);
             });
-            
             historyContainer.prepend(newRow);
         }
         
         generateBtn.addEventListener('click', () => {
             const placeholder = document.getElementById('placeholder-row');
-            if (placeholder) {
-                placeholder.remove();
-            }
-            
+            if (placeholder) placeholder.remove();
             const count = parseInt(generateCountInput.value, 10);
-            if (isNaN(count) || count < 1) {
+            if (isNaN(count) || count < 1) return;
+            for (let i = 0; i < count; i++) generatePrompt();
+        });
+
+        printBtn.addEventListener('click', () => window.print());
+        
+        // --- Admin Panel Logic ---
+        function getSelectedCategory() {
+            return document.querySelector('input[name="category"]:checked').value;
+        }
+        
+        function loadListIntoEditor(category) {
+            wordEditor.innerHTML = '';
+            words[category].forEach((wordObj, index) => {
+                const entry = document.createElement('div');
+                entry.className = 'word-entry';
+                entry.dataset.index = index;
+
+                const defaultSide = document.createElement('div');
+                const defaultWordEl = document.createElement('span');
+                defaultWordEl.className = `default-word ${wordObj.deleted ? 'deleted' : ''}`;
+                defaultWordEl.textContent = wordObj.default || '(New)';
+                const deleteDefaultBtn = document.createElement('button');
+                deleteDefaultBtn.className = `delete-btn delete-default-btn ${wordObj.deleted ? 'disabled' : ''}`;
+                deleteDefaultBtn.innerHTML = '&times;';
+                defaultSide.appendChild(deleteDefaultBtn);
+                defaultSide.appendChild(defaultWordEl);
+                
+                const customSide = document.createElement('div');
+                const customInput = document.createElement('input');
+                customInput.type = 'text';
+                customInput.value = wordObj.custom;
+                customInput.placeholder = 'Type to substitute...';
+                const clearCustomBtn = document.createElement('button');
+                clearCustomBtn.className = 'delete-btn clear-custom-btn';
+                clearCustomBtn.innerHTML = '&times;';
+                customSide.appendChild(customInput);
+                customSide.appendChild(clearCustomBtn);
+
+                entry.appendChild(defaultSide);
+                entry.appendChild(customSide);
+                wordEditor.appendChild(entry);
+            });
+        }
+        
+        wordEditor.addEventListener('click', (e) => {
+            const entry = e.target.closest('.word-entry');
+            if (!entry) return;
+            const index = parseInt(entry.dataset.index, 10);
+            const category = getSelectedCategory();
+            
+            if (e.target.classList.contains('delete-default-btn')) {
+                words[category][index].deleted = !words[category][index].deleted;
+                entry.querySelector('.default-word').classList.toggle('deleted');
+                e.target.classList.toggle('disabled');
+            }
+            if (e.target.classList.contains('clear-custom-btn')) {
+                words[category][index].custom = '';
+                entry.querySelector('input').value = '';
+            }
+        });
+        
+        wordEditor.addEventListener('input', (e) => {
+            const entry = e.target.closest('.word-entry');
+            if (!entry || e.target.tagName !== 'INPUT') return;
+            const index = parseInt(entry.dataset.index, 10);
+            const category = getSelectedCategory();
+            words[category][index].custom = e.target.value;
+        });
+        
+        adminBtn.addEventListener('click', () => {
+            passwordInput.value = '';
+            passwordError.classList.add('hidden');
+            passwordModalContainer.classList.remove('hidden');
+        });
+        
+        passwordCancelBtn.addEventListener('click', () => passwordModalContainer.classList.add('hidden'));
+        
+        passwordSubmitBtn.addEventListener('click', () => {
+             if (passwordInput.value === "goldsmiths") {
+                passwordModalContainer.classList.add('hidden');
+                loadListIntoEditor(getSelectedCategory());
+                adminPanelContainer.classList.remove('hidden');
+            } else {
+                passwordError.classList.remove('hidden');
+            }
+        });
+
+        closeAdminBtn.addEventListener('click', () => adminPanelContainer.classList.add('hidden'));
+        categorySelector.addEventListener('change', (e) => {
+             if (e.target.name === 'category') {
+                loadListIntoEditor(e.target.value);
+            }
+        });
+        
+        addWordBtn.addEventListener('click', () => {
+            const category = getSelectedCategory();
+            words[category].push({ default: '', custom: '', deleted: false });
+            loadListIntoEditor(category);
+        });
+        
+        resetListBtn.addEventListener('click', () => {
+             const category = getSelectedCategory();
+             words[category] = defaultWords[category].map(w => ({ default: w, custom: '', deleted: false }));
+             loadListIntoEditor(category);
+        });
+        
+        resetAllBtn.addEventListener('click', () => {
+            showAlert('Confirm Reset', 'Are you sure you want to reset ALL word lists to their original defaults? This will also clear your saved lists from this browser.');
+            document.getElementById('alert-ok-btn').onclick = () => {
+                 localStorage.removeItem('designPromptWords');
+                 localStorage.removeItem('designPromptHasChanges');
+                 localStorage.removeItem('designPromptIntroSeen');
+                 location.reload();
+            };
+        });
+
+        saveBtn.addEventListener('click', () => {
+            localStorage.setItem('designPromptWords', JSON.stringify(words));
+            localStorage.setItem('designPromptHasChanges', 'true');
+            reinitializeGenerator();
+            updateSaveButtonVisibility();
+            adminPanelContainer.classList.add('hidden');
+        });
+
+        // --- Splash Screen & File Logic ---
+        splashCloseBtn.addEventListener('click', () => {
+            splashScreenContainer.classList.add('hidden');
+            localStorage.setItem('designPromptIntroSeen', 'true');
+        });
+
+        saveListsBtn.addEventListener('click', () => {
+            classCodeInput.value = '';
+            saveModalContainer.classList.remove('hidden');
+        });
+
+        loadListsBtn.addEventListener('click', () => {
+            jsonFileInput.click();
+        });
+        
+        saveCancelBtn.addEventListener('click', () => {
+            saveModalContainer.classList.add('hidden');
+        });
+        
+        saveConfirmBtn.addEventListener('click', () => {
+            const classCode = classCodeInput.value.trim();
+            if (!classCode) {
+                showAlert('Input Required', 'Please enter a class code or project name for the file.');
                 return;
             }
-            for (let i = 0; i < count; i++) {
-                generatePrompt();
-            }
+            const filename = `${classCode.replace(/[^a-z0-9]/gi, '_')}_design_prompts.json`;
+            const dataStr = JSON.stringify(words, null, 2);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            saveModalContainer.classList.add('hidden');
         });
 
-        printBtn.addEventListener('click', () => {
-            window.print();
+        jsonFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loadedWords = JSON.parse(e.target.result);
+                    // Basic validation
+                    if (loadedWords.user && loadedWords.adjective && loadedWords.emotion && loadedWords.verb) {
+                        words = loadedWords;
+                        localStorage.setItem('designPromptWords', JSON.stringify(words));
+                        localStorage.setItem('designPromptHasChanges', 'true');
+                        reinitializeGenerator();
+                        updateSaveButtonVisibility();
+                        showAlert('Success', 'Word lists have been loaded successfully.');
+                        if (!adminPanelContainer.classList.contains('hidden')) {
+                            loadListIntoEditor(getSelectedCategory());
+                        }
+                    } else {
+                        throw new Error('Invalid file structure.');
+                    }
+                } catch (error) {
+                    showAlert('Load Error', 'The selected file is not a valid word list file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
         });
 
+        // --- Initialize word data on load ---
         window.onload = () => {
-            currentHue = Math.floor(Math.random() * 360);
+            const savedWords = localStorage.getItem('designPromptWords');
+            const hasSeenIntro = localStorage.getItem('designPromptIntroSeen');
 
-            for (const category in words) {
-                shuffledWords[category] = shuffle([...words[category]]);
+            if (!hasSeenIntro) {
+                splashScreenContainer.classList.remove('hidden');
             }
+
+            if (savedWords) {
+                const parsed = JSON.parse(savedWords);
+                if(parsed.user && typeof parsed.user[0] === 'object') {
+                    words = parsed;
+                } else {
+                    Object.keys(defaultWords).forEach(category => {
+                        words[category] = defaultWords[category].map(w => ({ default: w, custom: '', deleted: false }));
+                    });
+                }
+            } else {
+                Object.keys(defaultWords).forEach(category => {
+                    words[category] = defaultWords[category].map(w => ({ default: w, custom: '', deleted: false }));
+                });
+            }
+            
+            currentHue = Math.floor(Math.random() * 360);
+            reinitializeGenerator();
+            updateSaveButtonVisibility();
         };
     </script>
 
 </body>
 </html>
-
 
